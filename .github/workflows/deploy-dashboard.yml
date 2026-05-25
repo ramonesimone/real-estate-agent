@@ -24,11 +24,9 @@ jobs:
 
           echo "=== Pushing app to Space ==="
           cd apps/web
-          cat > .gitignore << 'EOF'
-node_modules
-.next
-*.log
-EOF
+          echo "node_modules" > .gitignore
+          echo ".next" >> .gitignore
+          echo "*.log" >> .gitignore
           git init
           git checkout -b main
           git remote add hf https://huggingface.co/spaces/ramonesimone/real-estate-agent
