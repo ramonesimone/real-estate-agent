@@ -14,17 +14,23 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -e
-          echo "=== Installing huggingface-hub ==="
-          pip install -q huggingface-hub
+          echo "=== Configuring git ==="
+          git config --global user.email "ramonesimone@users.noreply.github.com"
+          git config --global user.name "ramonesimone"
 
-          echo "=== Logging in to HF ==="
-          huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential
+          echo "=== Setting up HF auth ==="
+          echo "machine huggingface.co login ramonesimone password $HF_TOKEN" > "$HOME/.netrc"
+          chmod 600 "$HOME/.netrc"
 
           echo "=== Pushing app to Space ==="
           cd apps/web
+          cat > .gitignore << 'EOF'
+node_modules
+.next
+*.log
+EOF
           git init
-          git config user.email "ramonesimone@users.noreply.github.com"
-          git config user.name "ramonesimone"
+          git checkout -b main
           git remote add hf https://huggingface.co/spaces/ramonesimone/real-estate-agent
           git add -A
           git commit -m "deploy ${{ github.sha }}"
