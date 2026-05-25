@@ -46,12 +46,9 @@
 | Hugging Face Spaces Dockerfile | ✅ (ready to deploy) |
 | GitHub Actions (HF deploy) | ✅ (needs HF_TOKEN secret) |
 
-### ❌ Not Yet Deployed
-- **Frontend dashboard** — Hugging Face Space needs to be created
-  - Go to https://huggingface.co/new-space → name `real-estate-dashboard` → SDK: Docker
-  - Create HF token → add `HF_TOKEN` secret to GitHub repo
-  - Push to trigger auto-deploy
-  - URL: `https://ramonesimone-real-estate-dashboard.hf.space`
+### ✅ Deployed
+- **Frontend**: `https://ramonesimone-real-estate-agent.hf.space` (Hugging Face Spaces)
+  - Auto-deploys via GitHub Actions on push to `main` (paths: `apps/web/**`)
 
 ### 🔧 Local Development
 ```bash
