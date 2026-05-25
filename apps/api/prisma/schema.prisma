@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Change to "postgresql" if using PostgreSQL
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadSource {
+  WEBSITE
+  WHATSAPP
+  REFERRAL
+  OPEN_HOUSE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  HOT
+  COLD
+  DEAD
+  CONVERTED
+}
+
+model Lead {
+  id            String          @id @default(uuid())
+  phone         String          @unique
+  name          String?
+  email         String?
+  source        LeadSource
+  status        LeadStatus      @default(NEW)
+  score         Int             @default(0)
+  intent        String?
+  budget_min    Float?
+  budget_max    Float?
+  timeline      String?
+  location_pref String?
+  bedrooms      Int?
+  notes         String?
+  agent_id      String?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+
+  conversations  Conversation[]
+  nurture_sequences NurtureSequence[]
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  lead_id    String
+  channel    String   // WHATSAPP | SMS | EMAIL
+  direction  String   // INBOUND | OUTBOUND
+  message    String
+  timestamp  DateTime @default(now())
+
+  lead Lead @relation(fields: [lead_id], references: [id])
+
+  @@index([lead_id, timestamp])
+}
+
+model Property {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  type        String   // SALE | RENT
+  bedrooms    Int
+  bathrooms   Int
+  location    String
+  area        String
+  amenities   String  // JSON array stored as string (for SQLite compatibility)
+  images      String  // JSON array stored as string
+  status      String   @default("AVAILABLE") // AVAILABLE | UNDER_OFFER | SOLD
+  agent_id    String
+  created_at  DateTime @default(now())
+
+  @@index([type, price, bedrooms])
+}
+
+model NurtureSequence {
+  id            String   @id @default(uuid())
+  lead_id       String
+  sequence_type String   // COLD_NURTURE | POST_VIEWING | SELLER_FOLLOW_UP
+  current_step  Int      @default(0)
+  next_send_at  DateTime
+  active        Boolean  @default(true)
+
+  lead Lead @relation(fields: [lead_id], references: [id])
+
+  @@index([lead_id])
+}
+
+model Agent {
+  id          String  @id @default(uuid())
+  name        String
+  phone       String
+  email       String
+  agency      String?
+  whatsapp_id String?
+}

@@ -1,0 +1,23 @@
+name: Deploy dashboard to HF Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd apps/web
+          git init
+          git remote add hf https://ramonsesimone:$HF_TOKEN@huggingface.co/spaces/ramonsesimone/real-estate-dashboard
+          git add .
+          git commit -m "deploy ${{ github.sha }}"
+          git push hf main --force
