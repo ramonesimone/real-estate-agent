@@ -15,4 +15,4 @@ EXPOSE 7860
 ENV PORT=7860
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "start.js"]
+CMD ["npx", "--no-install", "next", "start"]
