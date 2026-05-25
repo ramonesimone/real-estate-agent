@@ -65,9 +65,12 @@ function AddPropertyForm({ onAdded }: { onAdded: () => void }) {
     e.preventDefault()
     setSubmitting(true)
     const form = new FormData(e.currentTarget)
-    const data = Object.fromEntries(form.entries())
-    data.amenities = (data.amenities as string).split(',').map((s: string) => s.trim())
-    data.images = (data.images as string).split(',').map((s: string) => s.trim())
+    const raw = Object.fromEntries(form.entries()) as Record<string, string>
+    const data = {
+      ...raw,
+      amenities: raw.amenities?.split(',').map((s) => s.trim()) ?? [],
+      images: raw.images?.split(',').map((s) => s.trim()) ?? [],
+    }
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'

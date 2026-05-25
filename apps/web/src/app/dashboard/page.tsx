@@ -55,7 +55,7 @@ export default function DashboardPage() {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="value" nameKey="name">
+            <Bar dataKey="value">
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
