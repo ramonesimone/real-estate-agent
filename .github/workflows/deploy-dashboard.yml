@@ -17,7 +17,7 @@ jobs:
         run: |
           cd apps/web
           git init
-          git remote add hf https://ramonsesimone:$HF_TOKEN@huggingface.co/spaces/ramonsesimone/real-estate-dashboard
+          git remote add hf https://ramonesimone:$HF_TOKEN@huggingface.co/spaces/ramonesimone/real-estate-agent
           git add .
           git commit -m "deploy ${{ github.sha }}"
           git push hf main --force
