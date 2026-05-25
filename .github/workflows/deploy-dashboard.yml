@@ -19,7 +19,8 @@ jobs:
           git init
           git config user.email "ramonesimone@users.noreply.github.com"
           git config user.name "ramonesimone"
-          git remote add hf https://ramonesimone:$HF_TOKEN@huggingface.co/spaces/ramonesimone/real-estate-agent
+          git remote add hf https://huggingface.co/spaces/ramonesimone/real-estate-agent
+          echo "machine huggingface.co login ramonesimone password $HF_TOKEN" > "$HOME/.netrc"
           git add -A
           git commit -m "deploy ${{ github.sha }}"
           git push hf main --force
