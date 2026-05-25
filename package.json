@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "echo 'done'",
-    "start": "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' apps/api/prisma/schema.prisma && npx prisma generate --schema=apps/api/prisma/schema.prisma && npx prisma db push --accept-data-loss --schema=apps/api/prisma/schema.prisma && npx tsx apps/api/src/index.ts",
+    "start": "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' apps/api/prisma/schema.prisma && npx prisma generate --schema=apps/api/prisma/schema.prisma && npx prisma db push --accept-data-loss --schema=apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts && npx tsx apps/api/src/index.ts",
 
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
