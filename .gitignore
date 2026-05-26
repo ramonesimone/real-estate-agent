@@ -11,4 +11,5 @@ Thumbs.db
 tmp/
 *.db
 *.db-journal
+*.zip
 *.tsbuildinfo
