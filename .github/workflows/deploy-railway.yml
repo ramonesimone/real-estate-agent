@@ -10,13 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Trigger Railway deployment via API
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
         env:
-          API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         shell: bash
         run: |
           API="https://backboard.railway.com/graphql/v2"
-          AUTH="Authorization: Bearer $API_TOKEN"
+          AUTH="Authorization: Bearer $RAILWAY_API_TOKEN"
 
           echo "Finding project..."
           PROJECTS=$(curl -s -X POST "$API" \
@@ -25,37 +28,4 @@ jobs:
           PID=$(echo "$PROJECTS" | jq -r '.data.projects.edges[0].node.id')
           echo "Project ID: $PID"
 
-          echo "Finding environment..."
-          ENVS=$(curl -s -X POST "$API" \
-            -H "$AUTH" -H "Content-Type: application/json" \
-            -d "$(jq -n --arg pid "$PID" '{query: "query($pid: String!) { environments(projectId: $pid) { edges { node { id name } } } }", variables: {pid: $pid}}')")
-          EID=$(echo "$ENVS" | jq -r '.data.environments.edges[] | select(.node.name == "production") | .node.id')
-          echo "Environment ID: $EID"
-
-          echo "Finding service..."
-          SVCS=$(curl -s -X POST "$API" \
-            -H "$AUTH" -H "Content-Type: application/json" \
-            -d "$(jq -n --arg pid "$PID" '{query: "query($pid: String!) { project(id: $pid) { services { edges { node { id name } } } } }", variables: {pid: $pid}}')")
-          SID=$(echo "$SVCS" | jq -r '.data.project.services.edges[0].node.id')
-          echo "Service ID: $SID"
-
-          echo "Triggering deployment..."
-          RESULT=$(curl -s -X POST "$API" \
-            -H "$AUTH" -H "Content-Type: application/json" \
-            -d "$(jq -n --arg sid "$SID" --arg eid "$EID" '{query: "mutation($sid: String!, $eid: String!) { serviceInstanceDeploy(serviceId: $sid, environmentId: $eid) }", variables: {sid: $sid, eid: $eid}}')")
-          echo "Triggered: $(echo "$RESULT" | jq -r '.data.serviceInstanceDeploy')"
-
-          echo "Checking deployment status (polling for up to 3 mins)..."
-          for i in 1 2 3 4 5 6; do
-            sleep 30
-            DEPLOYS=$(curl -s -X POST "$API" \
-              -H "$AUTH" -H "Content-Type: application/json" \
-              -d "$(jq -n --arg pid "$PID" --arg sid "$SID" '{query: "query($pid: String!, $sid: String!) { deployments(input: {projectId: $pid, serviceId: $sid}, first: 3) { edges { node { id status createdAt } } } }", variables: {pid: $pid, sid: $sid}}')")
-            STATUS=$(echo "$DEPLOYS" | jq -r '.data.deployments.edges[0].node.status // "unknown"')
-            echo "  Attempt $i: $STATUS"
-            case "$STATUS" in
-              *SUCCESS*|*success*|*ready*|*READY*) echo "Deploy succeeded!"; exit 0 ;;
-              *FAILED*|*failed*|*FAILURE*|*failure*|*CRASHED*|*crashed*) echo "Deploy failed!"; exit 1 ;;
-            esac
-          done
-          echo "Deploy still in progress after polling - check Railway dashboard"
+          railway up --ci --project "$PID"
