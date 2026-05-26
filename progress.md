@@ -3,31 +3,19 @@
 ## Current Status (May 26, 2026)
 
 ### ✅ Deployed
-- **App**: `https://real-estate-agent-production-2fc4.up.railway.app` (Railway — API + Frontend)
+- **API**: `https://real-estate-agent-production-2fc4.up.railway.app` (Railway)
+- **Frontend**: `https://ramonesimone-real-estate-agent.hf.space` (Hugging Face Spaces)
 - **Leads**: 40 loaded
 - **Properties**: 37 loaded
 - **Health**: `/health` returns `{"status":"ok"}`
-- **Frontend**: Served by the Railway API (Next.js static export)
-- **Auto-deploy**: GitHub Action via Railway CLI + Project Token
+- **Auto-deploy**: GitHub Actions — `deploy-railway.yml` (GraphQL API + `RAILWAY_TOKEN`) + `deploy-dashboard.yml` (git push to HF Space)
 
-### 🚧 Frontend Deployment Issue
-The frontend Docker image builds successfully on HF Spaces (all layers complete), but the container exits with code 1 at startup. The issue appears related to `next build` — builds without it run fine.
-
-**Attempted fixes:**
-| Attempt | Result |
-|---------|--------|
-| Minimal Node.js HTTP server | ✅ RUNNING |
-| + `npm install` (no build) | ✅ RUNNING |
-| + `npm run build` (standalone mode) | ❌ BUILD_ERROR (all steps pass) |
-| + `npm run build` (no standalone, `next start`) | ❌ BUILD_ERROR |
-| Multi-stage build (standalone) | ❌ `.next/standalone/` not found |
-| Multi-stage build (full node_modules) | ❌ BUILD_ERROR |
-| Static HTML export | ❌ `out/` directory not found |
-| Explicit hostname `-H 0.0.0.0` | ❌ BUILD_ERROR |
-| `npx --no-install next start` | ❌ BUILD_ERROR |
-| Different CMD variants (npm start, node dist/bin/next, start.js) | ❌ same result |
-
-**Root cause unclear** — likely HF Space state issue or Next.js server crash at startup. Try Factory Rebuild or create a fresh Space.
+### ✅ HF Spaces Frontend — Fixed
+Root causes and fixes:
+1. **`NODE_ENV=production` before `npm install`** → moved after install so devDeps (tailwindcss, etc.) are available for build
+2. **`next start` CMD incompatible with static export** → replaced with custom `start.js` (zero-dependency Node.js static server)
+3. **`@/` path alias not resolving on HF Spaces** → replaced with relative imports
+4. **`serve` package not found at runtime** → removed dependency, used `node start.js` with built-in `http` module
 
 ### 📋 What's Built
 
@@ -50,7 +38,7 @@ The frontend Docker image builds successfully on HF Spaces (all layers complete)
 #### Frontend (Next.js 14 + Tailwind + Recharts)
 | Page | Status |
 |------|--------|
-| Dashboard (stats, chart, hot leads) | ✅ (built, not deployed) |
+| Dashboard (stats, chart, hot leads) | ✅ |
 | Leads list (search, filter, sort) | ✅ |
 | Lead detail (conversation history) | ✅ |
 | Properties (list + add form) | ✅ |
@@ -69,8 +57,8 @@ The frontend Docker image builds successfully on HF Spaces (all layers complete)
 | Redis (BullMQ) | ✅ |
 | In-memory queue fallback (no Redis) | ✅ |
 | Twilio messaging with console fallback | ✅ |
-| GitHub Actions (push to HF Space) | ✅ |
-| Hugging Face Space `ramonesimone/real-estate-agent` | 🚧 Container startup issue |
+| GitHub Actions (`deploy-railway.yml` + `deploy-dashboard.yml`) | ✅ |
+| Hugging Face Space `ramonesimone/real-estate-agent` | ✅ |
 
 ### 🔧 Local Development
 ```bash
@@ -82,7 +70,13 @@ npm run dev:api
 npm run dev:web
 ```
 
-### Required Environment Variables
+### Required Secrets (GitHub)
+| Secret | Used By |
+|--------|---------|
+| `RAILWAY_TOKEN` | `deploy-railway.yml` (Railway API access) |
+| `HF_TOKEN` | `deploy-dashboard.yml` (HF Spaces git push) |
+
+### Required Environment Variables (Railway)
 | Variable | Where |
 |----------|-------|
 | `OPENROUTER_API_KEY` | Railway variables |
@@ -94,6 +88,8 @@ npm run dev:web
 | `REDIS_URL` | Auto-injected by Railway Redis |
 
 ### Notes
+- `RAILWAY_TOKEN` was reset — must match GitHub secret name `RAILWAY_TOKEN`
+- Frontend served via static export from custom `start.js` (Node.js built-in `http` module)
 - Local dev uses SQLite (no setup needed)
 - Railway uses PostgreSQL (auto-switched via `sed` in start script)
 - Jobs use in-memory queue if Redis is unavailable (lost on restart)
