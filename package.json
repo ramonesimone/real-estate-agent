@@ -6,13 +6,12 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "echo 'done'",
+    "build": "cd apps/web && npx next build",
     "start": "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' apps/api/prisma/schema.prisma && npx prisma generate --schema=apps/api/prisma/schema.prisma && npx prisma db push --accept-data-loss --schema=apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts && npx tsx apps/api/src/index.ts",
-
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
     "build:api": "npm run build -w apps/api",
-    "build:web": "npm run build -w apps/web",
+    "build:web": "cd apps/web && npx next build",
     "db:generate": "npm run db:generate -w apps/api",
     "db:push": "npm run db:push -w apps/api",
     "db:migrate": "npm run db:migrate -w apps/api",
