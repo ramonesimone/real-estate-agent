@@ -12,54 +12,35 @@ jobs:
 
       - name: Trigger Railway deployment via API
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        shell: bash
         run: |
-          python3 -c "
-import os, json, urllib.request, sys
+          API="https://backboard.railway.com/graphql/v2"
+          AUTH="Authorization: Bearer $API_TOKEN"
 
-url = 'https://backboard.railway.com/graphql/v2'
-token = os.environ['RAILWAY_TOKEN']
-headers = {
-    'Authorization': f'Bearer {token}',
-    'Content-Type': 'application/json'
-}
+          echo "Finding project..."
+          PROJECTS=$(curl -s -X POST "$API" \
+            -H "$AUTH" -H "Content-Type: application/json" \
+            -d '{"query":"query { projects { edges { node { id name } } } }"}')
+          PID=$(echo "$PROJECTS" | jq -r '.data.projects.edges[0].node.id')
+          echo "Project ID: $PID"
 
-def gql(query, variables=None):
-    data = {'query': query}
-    if variables:
-        data['variables'] = variables
-    req = urllib.request.Request(url, json.dumps(data).encode(), headers)
-    resp = urllib.request.urlopen(req)
-    return json.loads(resp.read())
+          echo "Finding environment..."
+          ENVS=$(curl -s -X POST "$API" \
+            -H "$AUTH" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg pid "$PID" '{query: "query($pid: String!) { environments(projectId: $pid) { edges { node { id name } } } }", variables: {pid: $pid}}')")
+          EID=$(echo "$ENVS" | jq -r '.data.environments.edges[] | select(.node.name == "production") | .node.id')
+          echo "Environment ID: $EID"
 
-# List projects
-result = gql('query { projects { edges { node { id name } } } }')
-projects = [e['node'] for e in result['data']['projects']['edges']]
-project = projects[0]
-print(f'Project: {project[\"name\"]} ({project[\"id\"]})')
+          echo "Finding service..."
+          SVCS=$(curl -s -X POST "$API" \
+            -H "$AUTH" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg pid "$PID" '{query: "query($pid: String!) { project(id: $pid) { services { edges { node { id name } } } } }", variables: {pid: $pid}}')")
+          SID=$(echo "$SVCS" | jq -r '.data.project.services.edges[0].node.id')
+          echo "Service ID: $SID"
 
-# Get environments
-result = gql(
-    'query(\$pid: String!) { environments(projectId: \$pid) { edges { node { id name } } } }',
-    {'pid': project['id']}
-)
-envs = [e['node'] for e in result['data']['environments']['edges']]
-env = next(e for e in envs if e['name'] == 'production')
-print(f'Environment: {env[\"name\"]} ({env[\"id\"]})')
-
-# Get services
-result = gql(
-    'query(\$pid: String!) { project(id: \$pid) { services { edges { node { id name } } } } }',
-    {'pid': project['id']}
-)
-services = [e['node'] for e in result['data']['project']['services']['edges']]
-service = services[0]
-print(f'Service: {service[\"name\"]} ({service[\"id\"]})')
-
-# Trigger deploy
-result = gql(
-    'mutation(\$sid: String!, \$eid: String!) { serviceInstanceDeploy(serviceId: \$sid, environmentId: \$eid) }',
-    {'sid': service['id'], 'eid': env['id']}
-)
-print(f'Deployment triggered!')
-"
+          echo "Triggering deployment..."
+          RESULT=$(curl -s -X POST "$API" \
+            -H "$AUTH" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg sid "$SID" --arg eid "$EID" '{query: "mutation($sid: String!, $eid: String!) { serviceInstanceDeploy(serviceId: $sid, environmentId: $eid) }", variables: {sid: $sid, eid: $eid}}')")
+          echo "Done: $(echo "$RESULT" | jq -r '.data.serviceInstanceDeploy')"
