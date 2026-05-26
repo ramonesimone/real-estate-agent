@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fetchFromApi, type NurtureSequence } from '@/lib/api'
+import { fetchFromApi, type NurtureSequence } from '../../lib/api'
 
 export default function SequencesPage() {
   const [sequences, setSequences] = useState<NurtureSequence[]>([])

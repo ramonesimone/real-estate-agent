@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fetchFromApi, type Property } from '@/lib/api'
+import { fetchFromApi, type Property } from '../../lib/api'
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])

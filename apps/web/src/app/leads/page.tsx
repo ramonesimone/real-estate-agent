@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { fetchFromApi, type Lead, type Conversation } from '@/lib/api'
+import { fetchFromApi, type Lead, type Conversation } from '../../lib/api'
 
 function LeadDetail({ id }: { id: string }) {
   const [lead, setLead] = useState<Lead | null>(null)

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { fetchFromApi, type Lead, type DashboardStats } from '@/lib/api'
+import { fetchFromApi, type Lead, type DashboardStats } from '../../lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: '#3B82F6',
