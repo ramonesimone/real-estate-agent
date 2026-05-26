@@ -3,14 +3,12 @@
 ## Current Status (May 26, 2026)
 
 ### ✅ Deployed
-- **API**: `https://real-estate-agent-production-2fc4.up.railway.app` (Railway)
+- **App**: `https://real-estate-agent-production-2fc4.up.railway.app` (Railway — API + Frontend)
 - **Leads**: 40 loaded
 - **Properties**: 37 loaded
 - **Health**: `/health` returns `{"status":"ok"}`
-- **Frontend source**: Pushed to `ramonesimone/real-estate-agent` HF Space
-  - Auto-deploys via GitHub Actions on push to `main`
-  - GitHub Action ✅ (pushes code, git auth fixed with .netrc)
-  - HF Docker build: all steps pass, but container fails at startup
+- **Frontend**: Served by the Railway API (Next.js static export)
+- **Auto-deploy**: GitHub Action via Railway CLI + Project Token
 
 ### 🚧 Frontend Deployment Issue
 The frontend Docker image builds successfully on HF Spaces (all layers complete), but the container exits with code 1 at startup. The issue appears related to `next build` — builds without it run fine.
