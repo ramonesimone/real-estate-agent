@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "cd apps/web && npx next build",
+    "build": "cd apps/web && NEXT_IGNORE_INCORRECT_LOCKFILE=1 npx next build",
     "start": "sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/' apps/api/prisma/schema.prisma && npx prisma generate --schema=apps/api/prisma/schema.prisma && npx prisma db push --accept-data-loss --schema=apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts && npx tsx apps/api/src/index.ts",
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
