@@ -43,4 +43,19 @@ jobs:
           RESULT=$(curl -s -X POST "$API" \
             -H "$AUTH" -H "Content-Type: application/json" \
             -d "$(jq -n --arg sid "$SID" --arg eid "$EID" '{query: "mutation($sid: String!, $eid: String!) { serviceInstanceDeploy(serviceId: $sid, environmentId: $eid) }", variables: {sid: $sid, eid: $eid}}')")
-          echo "Done: $(echo "$RESULT" | jq -r '.data.serviceInstanceDeploy')"
+          echo "Triggered: $(echo "$RESULT" | jq -r '.data.serviceInstanceDeploy')"
+
+          echo "Checking deployment status (polling for up to 3 mins)..."
+          for i in 1 2 3 4 5 6; do
+            sleep 30
+            DEPLOYS=$(curl -s -X POST "$API" \
+              -H "$AUTH" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg pid "$PID" --arg sid "$SID" '{query: "query($pid: String!, $sid: String!) { deployments(input: {projectId: $pid, serviceId: $sid}, first: 3) { edges { node { id status createdAt } } } }", variables: {pid: $pid, sid: $sid}}')")
+            STATUS=$(echo "$DEPLOYS" | jq -r '.data.deployments.edges[0].node.status // "unknown"')
+            echo "  Attempt $i: $STATUS"
+            case "$STATUS" in
+              *SUCCESS*|*success*|*ready*|*READY*) echo "Deploy succeeded!"; exit 0 ;;
+              *FAILED*|*failed*|*FAILURE*|*failure*|*CRASHED*|*crashed*) echo "Deploy failed!"; exit 1 ;;
+            esac
+          done
+          echo "Deploy still in progress after polling - check Railway dashboard"
