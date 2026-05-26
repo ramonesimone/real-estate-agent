@@ -17,9 +17,15 @@ const MIME = {
   '.txt': 'text/plain',
 }
 
+const EXT_RE = /\.[\w-]+$/
+
 http.createServer((req, res) => {
-  let p = req.url === '/' ? '/index.html' : req.url.replace(/\/$/, '') + '.html'
-  let filePath = path.join(PUBLIC, p)
+  let url = req.url
+
+  if (url === '/' || url === '') url = '/index.html'
+  else if (!EXT_RE.test(url)) url = url.replace(/\/$/, '') + '.html'
+
+  let filePath = path.join(PUBLIC, url)
   const ext = path.extname(filePath)
 
   fs.readFile(filePath, (err, data) => {
