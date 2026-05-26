@@ -1,12 +1,35 @@
 # Real Estate AI Agent — Progress
 
-## Current Status (May 25, 2026)
+## Current Status (May 26, 2026)
 
 ### ✅ Deployed
 - **API**: `https://real-estate-agent-production-2fc4.up.railway.app` (Railway)
 - **Leads**: 40 loaded
 - **Properties**: 37 loaded
 - **Health**: `/health` returns `{"status":"ok"}`
+- **Frontend source**: Pushed to `ramonesimone/real-estate-agent` HF Space
+  - Auto-deploys via GitHub Actions on push to `main`
+  - GitHub Action ✅ (pushes code, git auth fixed with .netrc)
+  - HF Docker build: all steps pass, but container fails at startup
+
+### 🚧 Frontend Deployment Issue
+The frontend Docker image builds successfully on HF Spaces (all layers complete), but the container exits with code 1 at startup. The issue appears related to `next build` — builds without it run fine.
+
+**Attempted fixes:**
+| Attempt | Result |
+|---------|--------|
+| Minimal Node.js HTTP server | ✅ RUNNING |
+| + `npm install` (no build) | ✅ RUNNING |
+| + `npm run build` (standalone mode) | ❌ BUILD_ERROR (all steps pass) |
+| + `npm run build` (no standalone, `next start`) | ❌ BUILD_ERROR |
+| Multi-stage build (standalone) | ❌ `.next/standalone/` not found |
+| Multi-stage build (full node_modules) | ❌ BUILD_ERROR |
+| Static HTML export | ❌ `out/` directory not found |
+| Explicit hostname `-H 0.0.0.0` | ❌ BUILD_ERROR |
+| `npx --no-install next start` | ❌ BUILD_ERROR |
+| Different CMD variants (npm start, node dist/bin/next, start.js) | ❌ same result |
+
+**Root cause unclear** — likely HF Space state issue or Next.js server crash at startup. Try Factory Rebuild or create a fresh Space.
 
 ### 📋 What's Built
 
@@ -29,11 +52,16 @@
 #### Frontend (Next.js 14 + Tailwind + Recharts)
 | Page | Status |
 |------|--------|
-| Dashboard (stats, chart, hot leads) | ✅ |
+| Dashboard (stats, chart, hot leads) | ✅ (built, not deployed) |
 | Leads list (search, filter, sort) | ✅ |
 | Lead detail (conversation history) | ✅ |
 | Properties (list + add form) | ✅ |
 | Sequences (list + pause/resume) | ✅ |
+
+#### TypeScript Fixes Applied
+- `dashboard/page.tsx`: Removed invalid `nameKey` prop from Recharts `<Bar>` component
+- `properties/page.tsx`: Fixed `FormDataEntryValue` type mismatch for `amenities`/`images` fields
+- Root page: Changed `redirect()` (server-side) to `useRouter().replace()` (client-side) for compatibility
 
 #### Infrastructure
 | Component | Status |
@@ -43,12 +71,8 @@
 | Redis (BullMQ) | ✅ |
 | In-memory queue fallback (no Redis) | ✅ |
 | Twilio messaging with console fallback | ✅ |
-| Hugging Face Spaces Dockerfile | ✅ (ready to deploy) |
-| GitHub Actions (HF deploy) | ✅ (needs HF_TOKEN secret) |
-
-### ✅ Deployed
-- **Frontend**: `https://ramonesimone-real-estate-agent.hf.space` (Hugging Face Spaces)
-  - Auto-deploys via GitHub Actions on push to `main` (paths: `apps/web/**`)
+| GitHub Actions (push to HF Space) | ✅ |
+| Hugging Face Space `ramonesimone/real-estate-agent` | 🚧 Container startup issue |
 
 ### 🔧 Local Development
 ```bash
@@ -57,6 +81,7 @@ npx prisma generate --schema=apps/api/prisma/schema.prisma
 npx prisma db push --schema=apps/api/prisma/schema.prisma
 npx -w apps/api tsx prisma/seed.ts
 npm run dev:api
+npm run dev:web
 ```
 
 ### Required Environment Variables
