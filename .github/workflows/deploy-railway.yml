@@ -10,15 +10,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --ci
+      - name: Trigger Railway deployment via API
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          python3 -c "
+import os, json, urllib.request, sys
+
+url = 'https://backboard.railway.com/graphql/v2'
+token = os.environ['RAILWAY_TOKEN']
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+def gql(query, variables=None):
+    data = {'query': query}
+    if variables:
+        data['variables'] = variables
+    req = urllib.request.Request(url, json.dumps(data).encode(), headers)
+    resp = urllib.request.urlopen(req)
+    return json.loads(resp.read())
+
+# List projects
+result = gql('query { projects { edges { node { id name } } } }')
+projects = [e['node'] for e in result['data']['projects']['edges']]
+project = projects[0]
+print(f'Project: {project[\"name\"]} ({project[\"id\"]})')
+
+# Get environments
+result = gql(
+    'query(\$pid: String!) { environments(projectId: \$pid) { edges { node { id name } } } }',
+    {'pid': project['id']}
+)
+envs = [e['node'] for e in result['data']['environments']['edges']]
+env = next(e for e in envs if e['name'] == 'production')
+print(f'Environment: {env[\"name\"]} ({env[\"id\"]})')
+
+# Get services
+result = gql(
+    'query(\$pid: String!) { project(id: \$pid) { services { edges { node { id name } } } } }',
+    {'pid': project['id']}
+)
+services = [e['node'] for e in result['data']['project']['services']['edges']]
+service = services[0]
+print(f'Service: {service[\"name\"]} ({service[\"id\"]})')
+
+# Trigger deploy
+result = gql(
+    'mutation(\$sid: String!, \$eid: String!) { serviceInstanceDeploy(serviceId: \$sid, environmentId: \$eid) }',
+    {'sid': service['id'], 'eid': env['id']}
+)
+print(f'Deployment triggered!')
+"
