@@ -1,0 +1,12 @@
+node_modules/
+.git/
+.github/
+*.md
+*.env
+.env*
+.gitignore
+.npmrc
+.vscode/
+out/
+.next/
+dist/
